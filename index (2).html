@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MonK — Premium Key System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#07060d;
+    --card:rgba(255,255,255,.025);--card-hover:rgba(255,255,255,.05);
+    --border:rgba(255,255,255,.08);--border-hover:rgba(168,85,247,.4);
+    --text:#f0f0f7;--muted:#9090a8;--muted-2:#5a5a72;
+    --p1:#a855f7;--p2:#22d3ee;--p3:#ec4899;--gold:#fbbf24;
+    --green:#34d399;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;overflow-x:hidden;line-height:1.6;font-size:15px;
+    -webkit-font-smoothing:antialiased;
+  }
+  body.loading{overflow:hidden}
+
+  /* ════════ LOADER ════════ */
+  .loader{
+    position:fixed;inset:0;z-index:9999;
+    background:radial-gradient(ellipse at center,#0d0817 0%,#07060d 100%);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:28px;
+    transition:opacity .7s ease,visibility .7s;
+  }
+  .loader.hide{opacity:0;visibility:hidden;pointer-events:none}
+  .loader-logo{
+    width:96px;height:96px;
+    animation:logoPulse 2s ease-in-out infinite;
+    filter:drop-shadow(0 0 30px rgba(168,85,247,.6));
+  }
+  @keyframes logoPulse{
+    0%,100%{transform:scale(1);filter:drop-shadow(0 0 30px rgba(168,85,247,.6))}
+    50%{transform:scale(1.05);filter:drop-shadow(0 0 50px rgba(168,85,247,1))}
+  }
+  .loader-bar{width:220px;height:3px;background:rgba(255,255,255,.08);border-radius:100px;overflow:hidden;position:relative}
+  .loader-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--p1),var(--p2),transparent);animation:barShine 1.5s ease-in-out infinite}
+  @keyframes barShine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  .loader-bar-fill{height:100%;width:0%;border-radius:100px;background:linear-gradient(90deg,var(--p1),var(--p2));animation:loadProgress 1.9s cubic-bezier(.4,0,.2,1) forwards;box-shadow:0 0 10px var(--p1)}
+  @keyframes loadProgress{0%{width:0%}100%{width:100%}}
+  .loader-text{font-size:12px;color:var(--muted);letter-spacing:4px;text-transform:uppercase;font-weight:600;display:flex;align-items:center;gap:2px}
+  .loader-dots span{animation:dotBlink 1.4s infinite}
+  .loader-dots span:nth-child(2){animation-delay:.2s}
+  .loader-dots span:nth-child(3){animation-delay:.4s}
+  @keyframes dotBlink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+
+  /* ════════ BACKGROUND ════════ */
+  .bg-grid{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(168,85,247,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(168,85,247,.04) 1px,transparent 1px);
+    background-size:60px 60px;
+    -webkit-mask-image:radial-gradient(ellipse at center,#000 20%,transparent 70%);
+    mask-image:radial-gradient(ellipse at center,#000 20%,transparent 70%);
+  }
+  .orb{position:fixed;border-radius:50%;filter:blur(130px);opacity:.45;pointer-events:none;z-index:0;animation:float 20s ease-in-out infinite}
+  .orb-1{width:500px;height:500px;background:#a855f7;top:-200px;left:-150px}
+  .orb-2{width:460px;height:460px;background:#22d3ee;bottom:-200px;right:-150px;animation-delay:-7s}
+  .orb-3{width:380px;height:380px;background:#ec4899;top:40%;left:50%;transform:translateX(-50%);opacity:.22;animation-delay:-13s}
+  @keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-40px)}}
+
+  /* ════════ LAYOUT ════════ */
+  .page{position:relative;z-index:2;max-width:1140px;margin:0 auto;padding:0 24px}
+
+  /* ════════ NAV ════════ */
+  .nav{
+    position:sticky;top:16px;z-index:100;
+    display:flex;align-items:center;gap:14px;padding:12px 16px;margin-top:20px;
+    background:rgba(13,10,26,.7);backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid var(--border);border-radius:16px;
+    box-shadow:0 8px 32px rgba(0,0,0,.5);
+  }
+  .logo{display:flex;align-items:center;gap:11px;text-decoration:none}
+  .logo-mark{
+    width:42px;height:42px;flex-shrink:0;
+    transition:.4s cubic-bezier(.2,.9,.3,1.4);
+    filter:drop-shadow(0 0 12px rgba(168,85,247,.4));
+  }
+  .logo:hover .logo-mark{
+    transform:scale(1.08) rotate(-4deg);
+    filter:drop-shadow(0 0 20px rgba(168,85,247,.8));
+  }
+  .logo-mark svg{width:100%;height:100%;display:block}
+  .logo-txt{display:flex;flex-direction:column;line-height:1.1}
+  .logo-txt b{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px}
+  .logo-txt span{font-size:9px;letter-spacing:2.5px;color:var(--muted);font-weight:600;text-transform:uppercase}
+
+  .nav-links{display:flex;gap:6px;margin-left:auto}
+  .nav-links a{font-size:13px;color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:8px;transition:.2s;font-weight:500}
+  .nav-links a:hover{color:#fff;background:rgba(255,255,255,.05)}
+
+  .btn-nav-premium{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:9px 16px;border-radius:10px;text-decoration:none;
+    background:linear-gradient(135deg,var(--p1),var(--p3));
+    color:#fff;font-weight:700;font-size:12.5px;letter-spacing:.3px;
+    box-shadow:0 4px 18px rgba(168,85,247,.45);transition:.25s;
+  }
+  .btn-nav-premium:hover{transform:translateY(-1px);box-shadow:0 6px 26px rgba(168,85,247,.7)}
+
+  /* ════════ HERO ════════ */
+  .hero{text-align:center;padding:72px 0 60px;position:relative}
+  .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:6px 14px;border-radius:100px;margin-bottom:24px;
+    background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);
+    font-size:12px;color:#d8b4fe;font-weight:500;letter-spacing:.3px;
+  }
+  .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.6s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .hero h1{
+    font-size:clamp(38px,7vw,72px);font-weight:800;line-height:1.05;
+    letter-spacing:-2.5px;margin-bottom:20px;color:#fff;
+  }
+  .hero h1 .grad{
+    background:linear-gradient(135deg,var(--p1),var(--p3),var(--p2));
+    background-size:200% 200%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:gradShift 6s ease infinite;
+  }
+  @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .hero p.lead{font-size:clamp(15px,2vw,18px);color:var(--muted);max-width:560px;margin:0 auto 36px;line-height:1.7}
+
+  .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:56px}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    padding:16px 32px;border:0;border-radius:14px;cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:15px;letter-spacing:.2px;
+    transition:.3s cubic-bezier(.2,.9,.3,1.2);position:relative;overflow:hidden;
+    text-decoration:none;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--p1),var(--p3),var(--p2));
+    background-size:200% 200%;animation:gradShift 6s ease infinite;
+    color:#fff;box-shadow:0 10px 40px -8px rgba(168,85,247,.6);
+  }
+  .btn-primary:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 18px 50px -8px rgba(168,85,247,.9)}
+  .btn-primary:disabled{opacity:.7;cursor:not-allowed}
+  .btn-primary::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-20deg);transition:.6s}
+  .btn-primary:hover:not(:disabled)::after{left:130%}
+  .btn-secondary{background:rgba(255,255,255,.05);color:#fff;border:1px solid var(--border)}
+  .btn-secondary:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);transform:translateY(-2px)}
+  .btn svg{width:18px;height:18px;transition:.3s}
+  .btn-primary:hover svg{transform:translateX(4px)}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden;max-width:720px;margin:0 auto}
+  .stat{background:rgba(13,10,26,.6);padding:22px 16px;text-align:center;backdrop-filter:blur(10px)}
+  .stat b{display:block;font-size:24px;font-weight:800;color:#fff;letter-spacing:-.5px;line-height:1.1}
+  .stat span{display:block;font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-top:4px;font-weight:600;text-transform:uppercase}
+
+  /* ════════ SECTIONS ════════ */
+  .section{padding:80px 0;position:relative}
+  .section-head{text-align:center;margin-bottom:52px}
+  .section-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--p1);text-transform:uppercase;margin-bottom:12px}
+  .section-head h2{font-size:clamp(28px,4.5vw,44px);font-weight:800;letter-spacing:-1.5px;color:#fff;line-height:1.15;margin-bottom:12px}
+  .section-head p{font-size:16px;color:var(--muted);max-width:520px;margin:0 auto;line-height:1.6}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.9,.3,1)}
+  .reveal.in{opacity:1;transform:translateY(0)}
+
+  .grid-features{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .feature-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px 20px;transition:.35s cubic-bezier(.2,.9,.3,1.2);position:relative;overflow:hidden}
+  .feature-card::before{content:'';position:absolute;inset:0;border-radius:18px;padding:1px;background:linear-gradient(135deg,transparent,rgba(168,85,247,.4),transparent);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:.3s}
+  .feature-card:hover{transform:translateY(-4px);background:var(--card-hover);border-color:transparent}
+  .feature-card:hover::before{opacity:1}
+  .feature-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(34,211,238,.18));border:1px solid rgba(168,85,247,.2);color:var(--p1);font-size:20px;margin-bottom:16px;transition:.3s}
+  .feature-card:hover .feature-icon{transform:scale(1.1) rotate(-4deg);box-shadow:0 0 24px rgba(168,85,247,.4)}
+  .feature-card h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-.2px}
+  .feature-card p{font-size:13px;color:var(--muted);line-height:1.55}
+
+  .grid-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .step{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 24px;transition:.3s}
+  .step:hover{border-color:var(--border-hover);background:var(--card-hover);transform:translateY(-3px)}
+  .step-num{font-size:44px;font-weight:800;line-height:1;letter-spacing:-2px;background:linear-gradient(135deg,var(--p1),var(--p2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:14px;display:inline-block}
+  .step h3{font-size:17px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-.2px}
+  .step p{font-size:13.5px;color:var(--muted);line-height:1.6}
+
+  /* Premium */
+  .premium-card{background:linear-gradient(160deg,rgba(168,85,247,.1),rgba(236,72,153,.06) 40%,rgba(13,10,26,.95) 70%);border:1px solid rgba(168,85,247,.3);border-radius:24px;padding:48px 40px;position:relative;overflow:hidden;text-align:center;box-shadow:0 30px 90px -30px rgba(168,85,247,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+  .premium-card::before{content:'';position:absolute;top:-50%;right:-20%;width:500px;height:500px;background:radial-gradient(circle,rgba(236,72,153,.25),transparent 70%);pointer-events:none}
+  .premium-card::after{content:'';position:absolute;bottom:-50%;left:-20%;width:500px;height:500px;background:radial-gradient(circle,rgba(34,211,238,.2),transparent 70%);pointer-events:none}
+  .premium-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:100px;background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.05));border:1px solid rgba(251,191,36,.4);color:var(--gold);font-size:11px;font-weight:700;letter-spacing:2px;margin-bottom:20px;position:relative}
+  .premium-card h2{font-size:clamp(28px,4.5vw,42px);font-weight:800;letter-spacing:-1.5px;color:#fff;margin-bottom:12px;position:relative}
+  .premium-card .sub{font-size:16px;color:var(--muted);max-width:520px;margin:0 auto 32px;position:relative;line-height:1.6}
+  .premium-list{list-style:none;display:grid;grid-template-columns:repeat(2,1fr);gap:14px 24px;max-width:620px;margin:0 auto 36px;position:relative;text-align:left}
+  .premium-list li{font-size:14px;color:var(--text);display:flex;align-items:flex-start;gap:10px;line-height:1.4}
+  .premium-list li::before{content:'✓';flex-shrink:0;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;font-size:11px;font-weight:900;display:grid;place-items:center;margin-top:2px;box-shadow:0 0 12px rgba(168,85,247,.5)}
+  .btn-premium{display:inline-flex;align-items:center;gap:10px;padding:18px 40px;border-radius:14px;background:linear-gradient(135deg,var(--gold),#f59e0b);color:#1a1200;font-family:inherit;font-weight:800;font-size:15px;letter-spacing:.3px;text-decoration:none;position:relative;box-shadow:0 12px 40px -8px rgba(251,191,36,.6);transition:.3s cubic-bezier(.2,.9,.3,1.2)}
+  .btn-premium:hover{transform:translateY(-3px);box-shadow:0 18px 50px -8px rgba(251,191,36,.9)}
+  .btn-premium svg{width:18px;height:18px}
+
+  .grid-reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .review{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;transition:.3s;display:flex;flex-direction:column;gap:14px}
+  .review:hover{border-color:var(--border-hover);background:var(--card-hover);transform:translateY(-3px)}
+  .review-head{display:flex;align-items:center;gap:12px}
+  .avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--p1),var(--p3));display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff;box-shadow:0 0 15px rgba(168,85,247,.4)}
+  .review-name{font-size:14px;font-weight:700;color:#fff;line-height:1.2}
+  .review-meta{font-size:11px;color:var(--muted);margin-top:2px}
+  .stars{color:var(--gold);font-size:14px;letter-spacing:2px}
+  .review-text{font-size:13.5px;color:var(--muted);line-height:1.65}
+
+  .faq-list{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+  .faq{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:.25s}
+  .faq[open]{background:rgba(168,85,247,.05);border-color:rgba(168,85,247,.3)}
+  .faq summary{padding:18px 22px;cursor:pointer;font-size:15px;font-weight:600;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:16px;list-style:none;transition:.2s}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:'+';font-size:22px;font-weight:300;color:var(--p1);transition:.25s;line-height:1;flex-shrink:0}
+  .faq[open] summary::after{transform:rotate(45deg);color:var(--p3)}
+  .faq summary:hover{color:var(--p1)}
+  .faq p{padding:0 22px 20px;font-size:14px;color:var(--muted);line-height:1.7}
+
+  .footer{margin-top:80px;padding:40px 0 30px;border-top:1px solid var(--border);text-align:center}
+  .footer-brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:10px}
+  .footer-brand .logo-mark{width:32px;height:32px}
+  .footer-brand b{font-size:14px;font-weight:700;color:#fff;letter-spacing:1px}
+  .footer p{font-size:12px;color:var(--muted-2);letter-spacing:.5px}
+  .footer a{color:var(--muted);text-decoration:none}
+  .footer a:hover{color:var(--p1)}
+
+  /* Toast */
+  .toast{
+    position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);
+    padding:14px 24px;border-radius:12px;
+    background:rgba(20,15,35,.95);backdrop-filter:blur(20px);
+    border:1px solid rgba(168,85,247,.4);color:#fff;font-weight:600;font-size:14px;
+    box-shadow:0 15px 50px -10px rgba(168,85,247,.6);
+    opacity:0;transition:.4s cubic-bezier(.2,.9,.3,1.2);z-index:1000;pointer-events:none;
+    display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  ::selection{background:rgba(168,85,247,.4);color:#fff}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:rgba(168,85,247,.3);border-radius:5px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(168,85,247,.6)}
+
+  @media(max-width:900px){
+    .grid-features{grid-template-columns:repeat(2,1fr)}
+    .grid-reviews{grid-template-columns:1fr}
+    .grid-steps{grid-template-columns:1fr}
+    .premium-list{grid-template-columns:1fr}
+    .nav-links{display:none}
+  }
+  @media(max-width:600px){
+    .page{padding:0 16px}
+    .nav{padding:10px 12px;top:10px}
+    .logo-mark{width:38px;height:38px}
+    .hero{padding:50px 0 40px}
+    .section{padding:56px 0}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .grid-features{grid-template-columns:1fr}
+    .premium-card{padding:32px 20px;border-radius:20px}
+    .hero-cta{flex-direction:column;align-items:stretch}
+    .hero-cta .btn{width:100%}
+    .btn-primary{font-size:14px;padding:15px 24px}
+    .section-head{margin-bottom:36px}
+    .loader-logo{width:80px;height:80px}
+    .loader-bar{width:180px}
+  }
+</style>
+</head>
+<body class="loading">
+
+<!-- ════════ LOADING SCREEN ════════ -->
+<div class="loader" id="loader">
+  <div class="loader-logo">
+    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lgLoader" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#a855f7"/>
+          <stop offset="50%" stop-color="#ec4899"/>
+          <stop offset="100%" stop-color="#22d3ee"/>
+        </linearGradient>
+      </defs>
+      <path d="M60 4 L108 30 L108 90 L60 116 L12 90 L12 30 Z" fill="url(#lgLoader)" opacity="0.15"/>
+      <path d="M60 4 L108 30 L108 90 L60 116 L12 90 L12 30 Z" fill="none" stroke="url(#lgLoader)" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M34 86 L34 36 L60 64 L86 36 L86 86" fill="none" stroke="url(#lgLoader)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  <div class="loader-text">Initializing<span class="loader-dots"><span>.</span><span>.</span><span>.</span></span></div>
+</div>
+
+<!-- ════════ BACKGROUND ════════ -->
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="page">
+
+  <!-- ════════ NAV ════════ -->
+  <nav class="nav">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#a855f7"/>
+              <stop offset="50%" stop-color="#ec4899"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+          <path d="M60 4 L108 30 L108 90 L60 116 L12 90 L12 30 Z" fill="url(#lg1)" opacity="0.15"/>
+          <path d="M60 4 L108 30 L108 90 L60 116 L12 90 L12 30 Z" fill="none" stroke="url(#lg1)" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M34 86 L34 36 L60 64 L86 36 L86 86" fill="none" stroke="url(#lg1)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="logo-txt"><b>MonK</b><span>Key System</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How It Works</a>
+      <a href="#premium">Premium</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a href="https://www.instagram.com/scripterzmonk?rpxt=MTJocGd2MnZkc2UweA==" target="_blank" rel="noopener" class="btn-nav-premium">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Premium
+    </a>
+  </nav>
+
+  <!-- ════════ HERO ════════ -->
+  <section class="hero">
+    <div class="badge"><span class="dot"></span>Verified · Secure · Instant Delivery</div>
+    <h1>Unlock Premium<br><span class="grad">Keys Instantly</span></h1>
+    <p class="lead">The fastest way to generate premium license keys. No sign-up, no waiting — just click, verify, and receive your unique key in under 60 seconds.</p>
+    <div class="hero-cta">
+      <button id="getKeyBtn" class="btn btn-primary">
+        <span class="btn-text">Get Your Key</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <a href="#premium" class="btn btn-secondary">View Premium</a>
+    </div>
+    <div class="stats reveal">
+      <div class="stat"><b data-count="12400">0</b><span>Keys Generated</span></div>
+      <div class="stat"><b data-count="8200">0</b><span>Active Users</span></div>
+      <div class="stat"><b data-count="99" data-suffix="%">0</b><span>Uptime</span></div>
+      <div class="stat"><b data-count="49" data-decimal="true" data-suffix="★">0</b><span>Avg Rating</span></div>
+    </div>
+  </section>
+
+  <!-- ════════ FEATURES ════════ -->
+  <section class="section" id="features">
+    <div class="section-head reveal">
+      <div class="section-tag">Powerful Features</div>
+      <h2>Built for Speed & Security</h2>
+      <p>Everything you need for a smooth, secure and lightning-fast key generation experience.</p>
+    </div>
+    <div class="grid-features">
+      <div class="feature-card reveal"><div class="feature-icon">🔒</div><h3>HWID Locked</h3><p>Every key is tied to your device for maximum protection.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">⚡</div><h3>Instant Delivery</h3><p>Receive your key in under 60 seconds — no waiting.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">🛡️</div><h3>Anti-Bypass</h3><p>Advanced protection against abuse and exploits.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">💎</div><h3>Premium Quality</h3><p>Undetected, tested and updated on a daily basis.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">🔄</div><h3>Auto Reset</h3><p>Fresh unique key generated on every request.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">♾️</div><h3>99.9% Uptime</h3><p>Our servers run 24/7 so you're never left waiting.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">💬</div><h3>Fast Support</h3><p>Get help on Instagram or Discord within minutes.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">🔑</div><h3>Secure Delivery</h3><p>Encrypted key delivery from end to end.</p></div>
+    </div>
+  </section>
+
+  <!-- ════════ HOW IT WORKS ════════ -->
+  <section class="section" id="how">
+    <div class="section-head reveal">
+      <div class="section-tag">Simple Process</div>
+      <h2>How It Works</h2>
+      <p>Three simple steps to get your premium license key.</p>
+    </div>
+    <div class="grid-steps">
+      <div class="step reveal"><div class="step-num">01</div><h3>Click Get Key</h3><p>Hit the "Get Your Key" button above to start the process. You'll be redirected to a quick verification page.</p></div>
+      <div class="step reveal"><div class="step-num">02</div><h3>Complete Task</h3><p>Finish a short verification step on Linkvertise — it takes less than 30 seconds to complete.</p></div>
+      <div class="step reveal"><div class="step-num">03</div><h3>Receive Your Key</h3><p>You'll be taken to the generator page where your unique license key is instantly created.</p></div>
+    </div>
+  </section>
+
+  <!-- ════════ PREMIUM ════════ -->
+  <section class="section" id="premium">
+    <div class="premium-card reveal">
+      <div class="premium-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Premium Access
+      </div>
+      <h2>Unlock Full Power</h2>
+      <p class="sub">Skip verification entirely. Get unlimited keys, priority support, and exclusive tools — all with one upgrade.</p>
+      <ul class="premium-list">
+        <li>Unlimited key generation — no daily limits</li>
+        <li>Zero verification — instant keys 24/7</li>
+        <li>Priority support on Instagram & Discord</li>
+        <li>Undetected, always-updated keys</li>
+        <li>Access to exclusive private tools</li>
+        <li>Lifetime updates, no hidden fees</li>
+      </ul>
+      <a href="https://www.instagram.com/scripterzmonk?rpxt=MTJocGd2MnZkc2UweA==" target="_blank" rel="noopener" class="btn-premium">
+        Buy Premium Now
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- ════════ REVIEWS ════════ -->
+  <section class="section">
+    <div class="section-head reveal">
+      <div class="section-tag">Real Feedback</div>
+      <h2>Loved by Thousands</h2>
+      <p>See what our verified users have to say.</p>
+    </div>
+    <div class="grid-reviews">
+      <div class="review reveal">
+        <div class="review-head"><div class="avatar">A</div><div><div class="review-name">Alex</div><div class="review-meta">Verified · 2 months</div></div></div>
+        <div class="stars">★★★★★</div>
+        <p class="review-text">Best key system I've used so far. Keys work 100% of the time and the support team responds fast. Premium is absolutely worth it.</p>
+      </div>
+      <div class="review reveal">
+        <div class="review-head"><div class="avatar">R</div><div><div class="review-name">Rohan</div><div class="review-meta">Verified · 3 months</div></div></div>
+        <div class="stars">★★★★★</div>
+        <p class="review-text">Fast, clean, no BS. Verified in seconds, key delivered instantly. Been using it for months with zero issues. Highly recommend.</p>
+      </div>
+      <div class="review reveal">
+        <div class="review-head"><div class="avatar">M</div><div><div class="review-name">Mike</div><div class="review-meta">Premium · 4 months</div></div></div>
+        <div class="stars">★★★★★</div>
+        <p class="review-text">Legit system with great support. Upgraded to premium and never looked back — unlimited keys with no waiting. 10/10.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ FAQ ════════ -->
+  <section class="section" id="faq">
+    <div class="section-head reveal">
+      <div class="section-tag">Common Questions</div>
+      <h2>Frequently Asked</h2>
+      <p>Everything you need to know about the system.</p>
+    </div>
+    <div class="faq-list">
+      <details class="faq reveal">
+        <summary>How do I get a key?</summary>
+        <p>Click the "Get Your Key" button on the homepage. You'll be redirected to Linkvertise to complete a quick verification, then land on the generator page where your unique key is created instantly.</p>
+      </details>
+      <details class="faq reveal">
+        <summary>Is it really free?</summary>
+        <p>Yes — the standard key system is completely free. You only need to complete a short verification step. Premium users skip this entirely.</p>
+      </details>
+      <details class="faq reveal">
+        <summary>What's included in Premium?</summary>
+        <p>Premium gives you unlimited key generation with no verification, priority support, and access to exclusive private tools. DM us on Instagram to purchase.</p>
+      </details>
+      <details class="faq reveal">
+        <summary>How long does verification take?</summary>
+        <p>Usually under 30 seconds. Once complete, you'll be redirected to the generator page where your key is ready to copy.</p>
+      </details>
+      <details class="faq reveal">
+        <summary>Can I use the key on multiple devices?</summary>
+        <p>Keys are HWID-locked to your device for security. If you need to switch devices, contact us on Instagram and we'll help you out.</p>
+      </details>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <div class="logo-mark">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="lgFooter" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#a855f7"/>
+              <stop offset="50%" stop-color="#ec4899"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+          <path d="M60 4 L108 30 L108 90 L60 116 L12 90 L12 30 Z" fill="url(#lgFooter)" opacity="0.15"/>
+          <path d="M60 4 L108 30 L108 90 L60 116 L12 90 L12 30 Z" fill="none" stroke="url(#lgFooter)" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M34 86 L34 36 L60 64 L86 36 L86 86" fill="none" stroke="url(#lgFooter)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <b>MONK KEY SYSTEM</b>
+    </div>
+    <p>© 2025 MonK Key System · All rights reserved · <a href="https://www.instagram.com/scripterzmonk?rpxt=MTJocGd2MnZkc2UweA==" target="_blank" rel="noopener">Contact</a></p>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ⚠️ APNA LINKVERTISE LINK YAHAN DAALO */
+  const LINKVERTISE_URL = "https://linkvertise.com/YOUR_LINK_ID";
+
+  /* ════════ LOADER ════════ */
+  function hideLoader(){
+    const loader = document.getElementById('loader');
+    if (loader && !loader.classList.contains('hide')){
+      loader.classList.add('hide');
+      document.body.classList.remove('loading');
+      setTimeout(() => { if (loader.parentNode) loader.remove(); }, 800);
+    }
+  }
+  window.addEventListener('load', () => setTimeout(hideLoader, 1900));
+  setTimeout(hideLoader, 4000); // fail-safe
+
+  /* ════════ GET KEY → LINKVERTISE ════════ */
+  const getKeyBtn = document.getElementById('getKeyBtn');
+  const btnText = getKeyBtn.querySelector('.btn-text');
+  let redirecting = false;
+
+  // Reset button state (handles browser back-button / bfcache)
+  function resetButtonState(){
+    redirecting = false;
+    getKeyBtn.disabled = false;
+    btnText.textContent = 'Get Your Key';
+  }
+  window.addEventListener('pageshow', resetButtonState);
+  document.addEventListener('DOMContentLoaded', resetButtonState);
+  resetButtonState();
+
+  getKeyBtn.addEventListener('click', () => {
+    if (redirecting) return;
+    redirecting = true;
+    try {
+      localStorage.setItem('monk_verified', Date.now().toString());
+      localStorage.removeItem('monk_generated');
+      localStorage.removeItem('monk_key_value');
+    } catch (e) { console.warn('Storage unavailable:', e); }
+    getKeyBtn.disabled = true;
+    btnText.textContent = 'Redirecting...';
+    setTimeout(() => { window.location.href = LINKVERTISE_URL; }, 700);
+  });
+
+  /* ════════ SCROLL REVEAL ════════ */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting){
+        entry.target.classList.add('in');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  /* ════════ COUNTER ANIMATION ════════ */
+  const counters = document.querySelectorAll('[data-count]');
+  const cObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting){
+        const el = entry.target;
+        const target = parseInt(el.dataset.count, 10);
+        const suffix = el.dataset.suffix || '';
+        const isDecimal = el.dataset.decimal === 'true';
+        const duration = 1800;
+        const start = performance.now();
+        function animate(now){
+          const p = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          const current = target * eased;
+          let display;
+          if (isDecimal) display = (current / 10).toFixed(1) + suffix;
+          else if (target >= 1000) display = (current / 1000).toFixed(1).replace(/\.0$/, '') + 'K' + suffix;
+          else display = Math.floor(current) + suffix;
+          el.textContent = display;
+          if (p < 1) requestAnimationFrame(animate);
+          else {
+            if (isDecimal) el.textContent = '4.9' + suffix;
+            else if (target >= 1000) el.textContent = Math.floor(target/1000) + 'K' + suffix;
+            else el.textContent = target + suffix;
+          }
+        }
+        requestAnimationFrame(animate);
+        cObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  counters.forEach(c => cObserver.observe(c));
+</script>
+</body>
+</html>
